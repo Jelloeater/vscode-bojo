@@ -1,0 +1,67 @@
+{
+  "name": "vscode-bojo",
+  "displayName": "Bojo — Bullet Journal Task Cycler",
+  "description": "Cycle bullet journal task states in markdown files via keyboard shortcut",
+  "version": "0.0.1",
+  "publisher": "jesse",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Jelloeater/vscode-bojo"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onLanguage:markdown"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "bojo.cycleTask",
+        "title": "Cycle Bullet Journal Task (Forward)"
+      },
+      {
+        "command": "bojo.cycleTaskReverse",
+        "title": "Cycle Bullet Journal Task (Reverse)"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "bojo.cycleTask",
+        "key": "ctrl+enter",
+        "mac": "cmd+enter",
+        "when": "editorTextFocus && editorLangId == 'markdown'"
+      },
+      {
+        "command": "bojo.cycleTaskReverse",
+        "key": "ctrl+shift+enter",
+        "mac": "cmd+shift+enter",
+        "when": "editorTextFocus && editorLangId == 'markdown'"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20.10.6",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^8.58.0",
+    "@typescript-eslint/parser": "^8.58.0",
+    "@vscode/test-electron": "^2.3.9",
+    "eslint": "^10.2.0",
+    "mocha": "^10.2.0",
+    "typescript": "^5.3.3"
+  }
+}
