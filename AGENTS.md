@@ -53,16 +53,41 @@ vscode-bojo/
 | Cycle forward | `Ctrl+Enter` | `Cmd+Enter` | `editorTextFocus && editorLangId == 'markdown'` |
 | Cycle backward | `Ctrl+Shift+Enter` | `Cmd+Shift+Enter` | `editorTextFocus && editorLangId == 'markdown'` |
 
-## Task States
+## Task States (9 States)
 
-Cycle order: `[ ]` → `[/]` → `[!]` → `[x]` → `[ ]`
+Cycle order: `[ ]` → `[/]` → `[x]` → `[>]` → `[<]` → `[-]` → `[*]` → `[?]` → `[!]` → `[ ]`
 
-| Character | State |
-|-----------|-------|
-| ` ` (space) | Not started |
-| `/` | In progress |
-| `!` | Blocked/waiting |
-| `x` | Completed |
+| Character | State | Description |
+|-----------|-------|-------------|
+| ` ` (space) | to-do | Not started |
+| `/` | incomplete | In progress |
+| `x` | done | Completed |
+| `>` | rescheduled | Forwarded/deferred |
+| `<` | scheduled | Planned/scheduled |
+| `-` | canceled | Cancelled/abandoned |
+| `*` | star | Starred/important |
+| `?` | question | Question/inquiry |
+| `!` | important | Urgent/critical |
+
+## Architecture
+
+### Separation of Concerns
+
+The extension is designed with a clear separation between:
+
+1. **Pure Logic** (`src/cycler.ts`) — No editor dependencies
+   - `getNextState(current)` — Get forward state
+   - `getPrevState(current)` — Get reverse state  
+   - `cycleLine(line, direction)` — Transform line text
+   - `getStateName(char)` — Get display name
+   - `getStateFromName(name)` — Get char from name
+
+2. **Editor Integration** (`src/extension.ts`) — VS Code specific
+   - Command registration
+   - Text editor manipulation
+   - Keybinding handling
+
+This separation makes the core logic portable to other editors.
 
 ## Development Notes
 
@@ -96,6 +121,7 @@ vsce publish   # Requires publisher setup
 
 ## Related Files
 
-- `SPEC.md` — Original specification
+- `SPEC.md` — Technical specification
 - `PLAN.md` — Implementation plan
 - `CHANGELOG.md` — Release notes
+- `PORTABLE.md` — Handoff spec for other editors (see separate file)
