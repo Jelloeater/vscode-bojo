@@ -1,99 +1,235 @@
-### Prerequisites
+# vscode-bojo Specification
 
-* Install **Node.js** and **Git**.
-* Install the VS Code Extension Generator: `npm install -g yo generator-code`
+## Overview
 
-### Setup Instructions
+vscode-bojo is a VS Code extension that cycles bullet journal (BuJo) task states in markdown files via keyboard shortcuts.
 
-1.  Generate the extension project:
-    ```bash
-    yo code
-    ```
-2.  Select **New Extension (TypeScript)**.
-3.  Name the extension (e.g., `bujo-task-cycler`).
-4.  Navigate to the generated directory: `cd bujo-task-cycler`.
+## Prerequisites
 
-### Configuration: `package.json`
+- Node.js 18+
+- VS Code 1.85.0+
+- Git
 
-Replace the `contributes` section in your `package.json` to register the command and map it to a keyboard shortcut (e.g., `Ctrl+Enter` or `Cmd+Enter`).
+## Installation
+
+### From VSIX
+
+1. Download `vscode-bojo-0.0.1.vsix` from releases
+2. Open VS Code → Extensions (`Ctrl+Shift+X`)
+3. Click **Install from VSIX...**
+4. Select the downloaded file
+
+### From Source
+
+```bash
+git clone https://github.com/Jelloeater/vscode-bojo
+cd vscode-bojo
+npm install
+npm run compile
+# Press F5 to test
+```
+
+## Configuration
+
+### package.json
+
+The extension registers two commands with keybindings:
 
 ```json
-"contributes": {
-  "commands": [
-    {
-      "command": "bujo-task-cycler.cycleTask",
-      "title": "Cycle Bullet Journal Task"
-    }
-  ],
-  "keybindings": [
-    {
-      "command": "bujo-task-cycler.cycleTask",
-      "key": "ctrl+enter",
-      "mac": "cmd+enter",
-      "when": "editorTextFocus"
-    }
-  ]
+{
+  "contributes": {
+    "commands": [
+      {
+        "command": "bojo.cycleTask",
+        "title": "Cycle Bullet Journal Task (Forward)"
+      },
+      {
+        "command": "bojo.cycleTaskReverse", 
+        "title": "Cycle Bullet Journal Task (Reverse)"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "bojo.cycleTask",
+        "key": "ctrl+enter",
+        "mac": "cmd+enter",
+        "when": "editorTextFocus && editorLangId == 'markdown'"
+      },
+      {
+        "command": "bojo.cycleTaskReverse",
+        "key": "ctrl+shift+enter",
+        "mac": "cmd+shift+enter",
+        "when": "editorTextFocus && editorLangId == 'markdown'"
+      }
+    ]
+  }
 }
 ```
 
-### Logic: `src/extension.ts`
+### Keybinding Conditions
 
-Replace the contents of `src/extension.ts` with the following code. This regex targets standard markdown lists with brackets (e.g., `- [ ]`, `* [/]`) and cycles the character inside the brackets.
+The `when` clause ensures the extension only activates in:
+- An active text editor (`editorTextFocus`)
+- Markdown files specifically (`editorLangId == 'markdown'`)
+
+## Task States
+
+### Cycle Order
+
+**Forward**: `[ ]` → `[/]` → `[!]` → `[x]` → `[ ]` (repeats)
+**Reverse**: `[ ]` → `[x]` → `[!]` → `[/]` → `[ ]` (repeats)
+
+### State Characters
+
+| Character | State | Meaning |
+|-----------|-------|---------|
+| ` ` (space) | Empty | Not started |
+| `/` | In Progress | Currently working on |
+| `!` | Blocked | Waiting on something |
+| `x` | Done | Completed |
+
+## Implementation
+
+### Architecture
+
+The extension is split into two main files:
+
+- `src/extension.ts` — VS Code activation and command registration
+- `src/cycler.ts` — Pure cycling logic (testable, no VS Code dependencies)
+
+### Core Logic (`src/cycler.ts`)
 
 ```typescript
-import * as vscode from 'vscode';
+const CYCLE = [' ', '/', '!', 'x'] as const;
 
-export function activate(context: vscode.ExtensionContext) {
-    let disposable = vscode.commands.registerCommand('bujo-task-cycler.cycleTask', () => {
-        const editor = vscode.window.activeTextEditor;
-        if (!editor) {
-            return;
-        }
+// Forward: get next state
+export function getNextState(current: string): string | null
 
-        const document = editor.document;
-        const selections = editor.selections;
+// Reverse: get previous state  
+export function getPrevState(current: string): string | null
 
-        editor.edit(editBuilder => {
-            selections.forEach(selection => {
-                const line = document.lineAt(selection.active.line);
-                const text = line.text;
-
-                // Matches lines starting with whitespace, a list marker (-, *, +), and brackets
-                const match = text.match(/^(\s*(?:-|\*|\+)\s*\[)(.)(\].*)$/);
-
-                if (match) {
-                    const prefix = match[1];
-                    const stateChar = match[2];
-                    const suffix = match[3];
-
-                    let nextChar = ' ';
-                    
-                    // Cycle: [ ] -> [/] -> [!] -> [x] -> [ ]
-                    switch (stateChar) {
-                        case ' ': nextChar = '/'; break;
-                        case '/': nextChar = '!'; break;
-                        case '!': nextChar = 'x'; break;
-                        case 'x': nextChar = ' '; break;
-                        default:  nextChar = '/'; break; // Default to in-progress if unknown
-                    }
-
-                    const newLine = prefix + nextChar + suffix;
-                    editBuilder.replace(line.range, newLine);
-                }
-            });
-        });
-    });
-
-    context.subscriptions.push(disposable);
-}
-
-export function deactivate() {}
+// Cycle a line
+export function cycleLine(line: string, direction: 'forward' | 'reverse'): string | null
 ```
 
-### Testing and Packaging
+### Regex Pattern
 
-1.  Press `F5` in VS Code to open an Extension Development Host window.
-2.  Open a Markdown file and create a task list item: `- [ ] Task name`.
-3.  Place your cursor on the line and press `Ctrl+Enter` (or `Cmd+Enter` on Mac) to cycle through the states.
-4.  To package the extension for permanent use, install `vsce` (`npm install -g @vscode/vsce`) and run `vsce package` in the project directory to generate a `.vsix` file.
-5.  Install the `.vsix` file via the VS Code Extensions view (**Install from VSIX...**).
+```
+^(\s*(?:-|\*|\+)\s*\[)(.)(\].*)$
+```
+
+| Group | Description |
+|-------|-------------|
+| 1 | Prefix: whitespace + list marker + `[` |
+| 2 | State character (the cycled character) |
+| 3 | Suffix: `]` + rest of line |
+
+### Supported List Markers
+
+- `-` (hyphen)
+- `*` (asterisk)
+- `+` (plus)
+
+### Edge Cases Handled
+
+- Indented lists (`  - [ ] Task`)
+- Multiple spaces (`-   [ ] Task`)
+- Extra content after brackets (`- [ ] Task with notes`)
+- Unknown states (left unchanged, not converted)
+- Non-matching lines (left untouched)
+
+### Multi-Cursor Support
+
+The extension iterates over all cursor selections:
+
+```typescript
+editor.edit(editBuilder => {
+    selections.forEach(selection => {
+        const line = document.lineAt(selection.active.line);
+        const newLine = cycleLine(line.text, 'forward');
+        
+        if (newLine !== null) {
+            editBuilder.replace(line.range, newLine);
+        }
+    });
+});
+```
+
+## Testing
+
+### Unit Tests
+
+Run with `npm test` or directly:
+
+```bash
+npx mocha out/test/cycler.test.js
+```
+
+### Test Coverage
+
+- Forward cycle through all 4 states
+- Reverse cycle through all 4 states
+- Unknown state handling (returns null)
+- Various list markers (-, *, +)
+- Indented lines
+- Lines with extra content
+- Edge cases (no brackets, no marker)
+
+## Building
+
+### Compile
+
+```bash
+npm run compile
+```
+
+### Package
+
+```bash
+npm install -g @vscode/vsce
+vsce package
+```
+
+Creates `vscode-bojo-0.0.1.vsix`
+
+## Development
+
+### Watch Mode
+
+```bash
+npm run watch
+```
+
+### Debugging
+
+Press `F5` in VS Code to open the Extension Development Host with debugger attached.
+
+### Linting
+
+```bash
+npm run lint
+```
+
+## File Structure
+
+```
+vscode-bojo/
+├── src/
+│   ├── extension.ts         # VS Code activation
+│   ├── cycler.ts            # Pure logic
+│   └── test/
+│       ├── cycler.test.ts  # Unit tests
+│       └── runTest.ts      # Test runner
+├── out/                    # Compiled JavaScript
+├── package.json            # Extension manifest
+├── tsconfig.json           # TypeScript config
+├── README.md               # User documentation
+├── CONTRIBUTING.md         # Contributor guide
+├── AGENTS.md               # AI agent guidelines
+├── CHANGELOG.md            # Release notes
+└── LICENSE                 # MIT license
+```
+
+## Version History
+
+- **0.0.1** — Initial release with forward/reverse cycling, multi-cursor support, markdown-only activation

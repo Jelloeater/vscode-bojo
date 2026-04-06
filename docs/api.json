@@ -1,0 +1,26 @@
+{
+  "project": "vscode-bojo",
+  "version": "0.0.1",
+  "description": "Cycle bullet journal task states in markdown files via keyboard shortcuts",
+  "commands": [
+    {
+      "name": "bojo.cycleTask",
+      "description": "Cycle bullet journal task state forward",
+      "keybinding": "Ctrl+Enter (Cmd+Enter on Mac)"
+    },
+    {
+      "name": "bojo.cycleTaskReverse", 
+      "description": "Cycle bullet journal task state backward",
+      "keybinding": "Ctrl+Shift+Enter (Cmd+Shift+Enter on Mac)"
+    }
+  ],
+  "states": [
+    {"char": " ", "name": "Not Started", "next": "/"},
+    {"char": "/", "name": "In Progress", "next": "!"},
+    {"char": "!", "name": "Blocked", "next": "x"},
+    {"char": "x", "name": "Completed", "next": " "}
+  ],
+  "supportedMarkers": ["-", "*", "+"],
+  "regex": "^(\\s*(?:-|\\*|\\+)\\s*\\[)(.)(\\].*)$",
+  "activation": "onLanguage:markdown"
+}
