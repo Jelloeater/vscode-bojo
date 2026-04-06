@@ -1,8 +1,21 @@
 /**
  * Task state cycle for bullet journal tasks
- * [ ] → [/] → [!] → [x] → [ ]
+ * 
+ * Cycle order (forward): 
+ * [ ] → [/] → [x] → [>] → [<] → [-] → [*] → [?] → [!] → [ ]
+ * 
+ * States:
+ * - space: to-do / unchecked
+ * - /: incomplete / in progress  
+ * - x: done / checked
+ * - >: rescheduled / forwarded
+ * - <: scheduled / scheduling
+ * - -: canceled / cancelled
+ * - *: star / important
+ * - ?: question / inquiry
+ * - !: important / urgent
  */
-const CYCLE = [' ', '/', '!', 'x'] as const;
+const CYCLE = [' ', '/', 'x', '>', '<', '-', '*', '?', '!'] as const;
 
 /**
  * Get the next state in the forward cycle
@@ -28,6 +41,57 @@ export function getPrevState(current: string): string | null {
 		return null; // Unknown state, leave untouched
 	}
 	return CYCLE[(index - 1 + CYCLE.length) % CYCLE.length];
+}
+
+/**
+ * Get the state character from state name
+ * @param name The state name (case-insensitive)
+ * @returns The state character or null if not found
+ */
+export function getStateFromName(name: string): string | null {
+	const stateMap: Record<string, string> = {
+		'todo': ' ',
+		'unchecked': ' ',
+		'to-do': ' ',
+		'incomplete': '/',
+		'in-progress': '/',
+		'done': 'x',
+		'checked': 'x',
+		'rescheduled': '>',
+		'forwarded': '>',
+		'scheduled': '<',
+		'scheduling': '<',
+		'canceled': '-',
+		'cancelled': '-',
+		'star': '*',
+		'starred': '*',
+		'question': '?',
+		'inquiry': '?',
+		'important': '!',
+		'urgent': '!',
+	};
+	const lower = name.toLowerCase().trim();
+	return stateMap[lower] ?? null;
+}
+
+/**
+ * Get the state name from character
+ * @param char The state character
+ * @returns The state name or null if not found
+ */
+export function getStateName(char: string): string | null {
+	const nameMap: Record<string, string> = {
+		' ': 'to-do',
+		'/': 'incomplete',
+		'x': 'done',
+		'>': 'rescheduled',
+		'<': 'scheduled',
+		'-': 'canceled',
+		'*': 'star',
+		'?': 'question',
+		'!': 'important',
+	};
+	return nameMap[char] ?? null;
 }
 
 /**

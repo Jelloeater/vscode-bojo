@@ -16,17 +16,23 @@ A VS Code extension that cycles bullet journal task states in markdown files via
 - **Multi-cursor support** — Cycle multiple tasks at once
 - **Markdown-only** — Only activates in markdown files to avoid conflicts
 - **Supported list markers** — Works with `-`, `*`, and `+`
+- **9 task states** — Full Obsidian Tasks compatibility
 
 ## Task States
 
-Cycle order: `[ ]` → `[/]` → `[!]` → `[x]` → `[ ]`
+Cycle order: `[ ]` → `[/]` → `[x]` → `[>]` → `[<]` → `[-]` → `[*]` → `[?]` → `[!]` → `[ ]`
 
-| State | Character | Meaning |
-|-------|-----------|---------|
-| Empty | ` ` | Not started |
-| In Progress | `/` | Currently working |
-| Blocked | `!` | Blocked/waiting |
-| Done | `x` | Completed |
+| Character | State | Description |
+|-----------|-------|-------------|
+| ` ` (space) | to-do | Not started |
+| `/` | incomplete | In progress |
+| `x` | done | Completed |
+| `>` | rescheduled | Forwarded/deferred |
+| `<` | scheduled | Planned/scheduled |
+| `-` | canceled | Cancelled/abandoned |
+| `*` | star | Starred/important |
+| `?` | question | Question/inquiry |
+| `!` | important | Urgent/critical |
 
 ## Installation
 
@@ -54,8 +60,13 @@ Open any markdown file and create tasks:
 ```markdown
 - [ ] Write documentation
 - [/] Implement feature
-- [!] Review PR
-- [x] Deploy to production
+- [x] Review PR
+- [>] Reschedule meeting
+- [<] Plan vacation
+- [-] Canceled task
+- [*] Important task
+- [?] Question to answer
+- [!] Urgent matter
 ```
 
 Place your cursor on a line and press `Ctrl+Enter` to cycle through states.
